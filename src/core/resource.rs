@@ -1,4 +1,4 @@
-use crate::core::{player::Player};
+use crate::core::{player::player::Player};
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum Resource {

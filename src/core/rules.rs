@@ -1,4 +1,4 @@
-use crate::core::{player::{self, Player}, resource::Resource};
+use crate::core::{player::player::{ Player }, resource::Resource};
 
 // helper function
 fn has_resources(player: &Player, cost: &[(Resource, u8)]) -> bool {

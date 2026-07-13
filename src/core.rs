@@ -1,11 +1,8 @@
 pub mod board;
 pub mod development_card;
-pub mod dice;
 pub mod player;
 pub mod resource;
 pub mod tile;
-pub mod pieces;
 pub mod rules;
-pub mod game_state;
-pub mod actions;
+pub mod game_manager;
 pub mod bank;
