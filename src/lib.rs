@@ -18,7 +18,10 @@ pub struct State {
     // the actual application window that is displayed.
     window: Arc<Window>,
     render_pipeline: wgpu::RenderPipeline,
-
+    
+    // variables used for challenges
+    color_pipeline: wgpu::RenderPipeline,
+    use_color_pipeline: bool,
     clear_color: wgpu::Color,
 }
 
@@ -154,12 +157,60 @@ impl State {
             cache: None, // 6.
         });
 
+        // Define an alternate render pipeline in this location...
+        let color_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some("Color Pipeline"),
+            layout: Some(&render_pipeline_layout),
+            vertex: wgpu::VertexState {
+                module: &shader,
+                // THIS IS OUR VERTEX SHADER
+                entry_point: Some("vs_alt"), // 1.
+                buffers: &[], // 2.
+                compilation_options: wgpu::PipelineCompilationOptions::default(),
+            },
+            fragment: Some(wgpu::FragmentState { // 3.
+                module: &shader,
+                // THIS IS OUR FRAGMENT SHADER
+                entry_point: Some("fs_alt"),
+                targets: &[Some(wgpu::ColorTargetState { // 4.
+                    format: config.format,
+                    blend: Some(wgpu::BlendState::REPLACE),
+                    write_mask: wgpu::ColorWrites::ALL,
+                })],
+                compilation_options: wgpu::PipelineCompilationOptions::default(),
+            }),
+            // How do we interpret our vertices when converting them into triangles?h
+            primitive: wgpu::PrimitiveState {
+                topology: wgpu::PrimitiveTopology::TriangleList, // 1. Means every 3 vertices is one triangle
+                strip_index_format: None,
+                front_face: wgpu::FrontFace::Ccw, // 2. Determine whether triangle is facing forward or not
+                cull_mode: Some(wgpu::Face::Back),
+                // Setting this to anything other than Fill requires Features::NON_FILL_POLYGON_MODE
+                polygon_mode: wgpu::PolygonMode::Fill,
+                // Requires Features::DEPTH_CLIP_CONTROL
+                unclipped_depth: false,
+                // Requires Features::CONSERVATIVE_RASTERIZATION
+                conservative: false,
+            },
+            // continued ...
+            depth_stencil: None, // 1.
+            multisample: wgpu::MultisampleState {
+                count: 1, // 2.
+                mask: !0, // 3.
+                alpha_to_coverage_enabled: false, // 4.
+            },
+            multiview_mask: None, // 5.
+            cache: None, // 6.
+        });
+
         let clear_color = wgpu::Color {
             r: 0.1,
             g: 0.2,
             b: 0.3,
             a: 1.0,
         };
+
+        let use_color_pipeline = false;
 
         Ok(Self {
             surface,
@@ -168,8 +219,10 @@ impl State {
             config,
             is_surface_configured: false,
             render_pipeline,
+            color_pipeline,
             window,
-            clear_color
+            clear_color,
+            use_color_pipeline
         })
     }
 
@@ -186,8 +239,13 @@ impl State {
 
     // impl State
     // handles keyboard events
-    fn handle_key(&self, event_loop: &ActiveEventLoop, code: KeyCode, is_pressed: bool) {
+    fn handle_key(&mut self, event_loop: &ActiveEventLoop, code: KeyCode, is_pressed: bool) {
         match (code, is_pressed) {
+            // If space pressed, change the variable for using color pipeline or not...
+            (KeyCode::Space, true) => {
+                self.use_color_pipeline = !self.use_color_pipeline;
+                self.window.request_redraw();
+            }
             (KeyCode::Escape, true) => event_loop.exit(),
             _ => {}
         }
@@ -278,7 +336,12 @@ impl State {
             });
 
             // Set the render pipeline as the pipeline
-            render_pass.set_pipeline(&self.render_pipeline); // 2.
+            // OR if use_color_pipeline true, use color pipeline
+            if (self.use_color_pipeline) {
+                render_pass.set_pipeline(&self.color_pipeline);
+            } else {
+                render_pass.set_pipeline(&self.render_pipeline); // 2.
+            }
             // tell wgpu to draw something with three vertices + one instance.
             render_pass.draw(0..3, 0..1); // 3.
         }
