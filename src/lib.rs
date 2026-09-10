@@ -89,7 +89,7 @@ pub struct State {
     num_indices: u32,
     
     // variables used for challenges
-    challengeShapeEnabled: bool,
+    challenge_shape_enabled: bool,
     vertex_buffer_hex: wgpu::Buffer,
     index_buffer_hex: wgpu::Buffer,
     num_indices_hex: u32,
@@ -272,7 +272,7 @@ impl State {
         let num_indices_hex = HEXAGON_INDICES.len() as u32;
 
 
-        let challengeShapeEnabled = false;
+        let challenge_shape_enabled = false;
 
         Ok(Self {
             surface,
@@ -286,7 +286,7 @@ impl State {
             index_buffer,
             num_indices,
 
-            challengeShapeEnabled,
+            challenge_shape_enabled,
             vertex_buffer_hex,
             index_buffer_hex,
             num_indices_hex
@@ -311,7 +311,7 @@ impl State {
             // If space pressed, change the variable for using color pipeline or not...
             (KeyCode::Space, true) => {
                 // do something when a space is pressed here!
-                self.challengeShapeEnabled =!self.challengeShapeEnabled;
+                self.challenge_shape_enabled =!self.challenge_shape_enabled;
                 self.window.request_redraw();
             }
             (KeyCode::Escape, true) => event_loop.exit(),
@@ -403,7 +403,7 @@ impl State {
 
             //challenge code: check the variable to see if we draw the regular shape or a hexagon
             render_pass.set_pipeline(&self.render_pipeline);
-            if (self.challengeShapeEnabled) {
+            if self.challenge_shape_enabled {
                 render_pass.set_vertex_buffer(0, self.vertex_buffer_hex.slice(..));
                 render_pass.set_index_buffer(self.index_buffer_hex.slice(..), wgpu::IndexFormat::Uint16);
                 render_pass.draw_indexed(0..self.num_indices_hex, 0, 0..1); // 3.
